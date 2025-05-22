@@ -1,46 +1,70 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import PlayerList from "./PlayerList";
 import Chat from "./Chat";
 
-let socket
+const removeEventListener = (event, socket) => {
+	const listeners = socket.listeners(event)
+	Object.keys(listeners).forEach(key => socket.removeEventListener(event, listeners[key]))
+}
 
 const Pong = () => {
 
+	const socket = useRef(null)
+
 	const [players, setPlayers] = useState({})
 	const [messages, setMessages] = useState('')
+	const [isConnected, setIsConnected] = useState(false)
 
 
 	useEffect(() => {
-		socket = new io("http://localhost:4000");
-		socket.on("connect", () => {
-			console.log("conectado!");
+		socket.current = new io("http://localhost:4000", {
+			autoConnect: false
 		});
-	}, []);
 
-	useEffect(() => {
+		const s = socket.current
+
+		s.on("connect", () => {
+			console.log("Conectado!");
+			setIsConnected(true)
+		});
+		s.on("disconnect", () => {
+			console.log("Desconectado!");
+			setIsConnected(false)
+		});
+
+
+			s.on('PlayerRefresh', (players) => {
+				setPlayers(players)
+			})
 		
-		socket.on('PlayerRefresh', (players) => {
-			setPlayers(players)
-		})
+		const handleReceiveMessage = (receivedMessage) => {
+			setMessages(prev => prev + "\n" + receivedMessage);
+		};
 
-	},[players])
+		s.on('ReceiveMessage', handleReceiveMessage);
 
-	useEffect(() => {
-		socket.on('ReceiveMessage', (receivedMessage) => {
-			setMessages(messages + "\n" + receivedMessage)
-		})
-	}, [messages])
+		s.open()
+
+		return () => {
+			s.off("PlayerRefresh");
+			s.off("ReceiveMessage", handleReceiveMessage);
+			s.disconnect();
+		};
+	}, [])
 
 	const sendMessage = (message) => {
-		socket.emit("SendMessage", message)
+		socket.current.emit("SendMessage", message)
 	}
 
 	return (
-		<div>
-			<PlayerList players={players} />
-			<Chat sendMessage={sendMessage} messages={messages} />
-		</div>
+		<>
+			{!isConnected && <div>Conectando...</div>}
+			<div>
+				<PlayerList players={players} />
+				<Chat sendMessage={sendMessage} messages={messages} />
+			</div>
+		</>
 	);
 };
 

@@ -11,6 +11,7 @@ const Chat = (props) => {
                 type="text"
                 value={messageToSend}
                 onChange={(e) => setMessageToSend(e.target.value)} 
+                onSubmit={(e) => props.sendMessage(e.target.value)} 
             />
             <button onClick={() => props.sendMessage(messageToSend)}>Enviar</button>
         </div>

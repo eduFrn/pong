@@ -21,7 +21,7 @@ sockets.on("connection", (socket) => {
     const name = "Player_" + socket.id.substring(0, 5);
     game.players[socket.id] = { name };
     refreshPlayers();
-    sendMessage(game.players[socket.id], ' conectado')
+    sendMessage(game.players[socket.id], 'conectado')
 
     socket.on('disconnect', () => {
         sendMessage(game.players[socket.id], 'saiu')
