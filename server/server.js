@@ -13,6 +13,7 @@ const sockets = new Server(server, {
 
 const game = {
     players: {},
+    rooms: {}
 };
 
 sockets.on("connection", (socket) => {
@@ -33,11 +34,47 @@ sockets.on("connection", (socket) => {
         sendMessage(game.players[socket.id],message)
     })
 
+    socket.on('CreateRoom', () => {
+        socket.join(socket.id)
+
+        game.rooms[socket.id] = {
+            player1: socket.id,
+            player2: undefined
+        }
+
+        game.players[socket.id].room = socket.id
+
+        refreshPlayers()
+        refreshRooms()
+        sendMessage(game.players[socket.id], 'criou uma sala')
+    })
+
+    socket.on('LeaveRoom', () =>{
+        const roomId = game.players[socket.id].room
+        const room = game.rooms[roomId]
+
+        if(socket.id == room.player1){
+            room.player1 = undefined
+        }else{
+            room.player2 = undefined
+        }
+
+        if(!room.player1 && !room.player2){
+            delete game.rooms[roomId];
+        }
+
+        console.log(game.rooms)
+    })
+
     console.log(game);
 });
 
 const sendMessage = (player, message) => {
     sockets.emit('ReceiveMessage', `${player.name}: ${message}`)
+}
+
+const refreshRooms = () => {
+    sockets.emit("RoomsRefresh", game.rooms)
 }
 
 const refreshPlayers = () => {

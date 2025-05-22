@@ -1,66 +1,36 @@
 import React, { useEffect, useRef, useState } from "react";
-import { io } from "socket.io-client";
 import PlayerList from "./PlayerList";
 import Chat from "./Chat";
 
-const removeEventListener = (event, socket) => {
-	const listeners = socket.listeners(event)
-	Object.keys(listeners).forEach(key => socket.removeEventListener(event, listeners[key]))
-}
+import { useContext } from "react";
+import { createRoom, GameContext, joinRoom, sendMessage, leaveRoom} from "../contexts/GameContext";
 
 const Pong = () => {
-
-	const socket = useRef(null)
-
-	const [players, setPlayers] = useState({})
-	const [messages, setMessages] = useState('')
-	const [isConnected, setIsConnected] = useState(false)
-
-
-	useEffect(() => {
-		socket.current = new io("http://localhost:4000", {
-			autoConnect: false
-		});
-
-		const s = socket.current
-
-		s.on("connect", () => {
-			console.log("Conectado!");
-			setIsConnected(true)
-		});
-		s.on("disconnect", () => {
-			console.log("Desconectado!");
-			setIsConnected(false)
-		});
-
-
-			s.on('PlayerRefresh', (players) => {
-				setPlayers(players)
-			})
-		
-		const handleReceiveMessage = (receivedMessage) => {
-			setMessages(prev => prev + "\n" + receivedMessage);
-		};
-
-		s.on('ReceiveMessage', handleReceiveMessage);
-
-		s.open()
-
-		return () => {
-			s.off("PlayerRefresh");
-			s.off("ReceiveMessage", handleReceiveMessage);
-			s.disconnect();
-		};
-	}, [])
-
-	const sendMessage = (message) => {
-		socket.current.emit("SendMessage", message)
-	}
+	const { isConnected, players, player, messages, rooms } = useContext(GameContext)
 
 	return (
 		<>
 			{!isConnected && <div>Conectando...</div>}
 			<div>
+				{
+					!player.room &&
+					<div>
+						<button onClick={createRoom}>Criar sala</button>
+						{rooms.map((key) =>
+							<div key={`room_${key}`}>
+								{rooms[key].name}
+								<button onClick={() => joinRoom(key)}>Entrar na sala</button>
+							</div>
+						)}
+					</div>
+				}
+				{
+					player.room &&
+					<div>
+						Aguardando outro jogador
+						<button onClick={leaveRoom}>Sair da sala</button>
+					</div>
+				}
 				<PlayerList players={players} />
 				<Chat sendMessage={sendMessage} messages={messages} />
 			</div>

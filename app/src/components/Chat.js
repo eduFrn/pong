@@ -6,7 +6,7 @@ const Chat = (props) => {
 
     return (
         <div>
-            <div style={{whiteSpace:'pre'}}>{props.messages}</div>
+            <div style={{whiteSpace:'pre'}}>{props.messages.join("\n")}</div>
             <input
                 type="text"
                 value={messageToSend}
