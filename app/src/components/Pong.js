@@ -1,39 +1,35 @@
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
 import PlayerList from "./PlayerList";
 import Chat from "./Chat";
 
 import { useContext } from "react";
-import { createRoom, GameContext, joinRoom, sendMessage, leaveRoom} from "../contexts/GameContext";
+import { GameContext, sendMessage } from "../contexts/GameContext";
+import Rooms from "./Rooms";
+import Game from "./Game";
 
 const Pong = () => {
-	const { isConnected, players, player, messages, rooms } = useContext(GameContext)
+	const { isConnected, messages, match } = useContext(GameContext)
+	console.log(match.status)
 
 	return (
 		<>
 			{!isConnected && <div>Conectando...</div>}
-			<div>
-				{
-					!player.room &&
-					<div>
-						<button onClick={createRoom}>Criar sala</button>
-						{rooms.map((key) =>
-							<div key={`room_${key}`}>
-								{rooms[key].name}
-								<button onClick={() => joinRoom(key)}>Entrar na sala</button>
-							</div>
-						)}
-					</div>
-				}
-				{
-					player.room &&
-					<div>
-						Aguardando outro jogador
-						<button onClick={leaveRoom}>Sair da sala</button>
-					</div>
-				}
-				<PlayerList players={players} />
-				<Chat sendMessage={sendMessage} messages={messages} />
+
+
+			{match.status && <Game/>}
+
+			{!match.status && <div className="app">
+
+
+			<div className="card h-100">
+				<Rooms />
+				<hr style={{marginBlock:"10px"}}/>
+				<PlayerList />
 			</div>
+
+			<Chat sendMessage={sendMessage} messages={messages}/>
+			</div>
+			}
 		</>
 	);
 };

@@ -15,10 +15,30 @@ const reducer = (state, action) => {
                 ...state,
                 players: action.payload
             }
+        case 'PLAYER':
+            return {
+                ...state,
+                player: action.payload
+            }
         case 'ADD_MESSAGES':
             return {
                 ...state,
                 messages: [...state.messages, action.payload]
+            }
+        case 'ROOMS':
+            return {
+                ...state,
+                rooms: action.payload
+            }
+        case 'ROOM':
+            return {
+                ...state,
+                room: state.rooms[state.players[action.payload].room]
+            }
+        case 'MATCH':
+            return {
+                ...state,
+                match: action.payload
             }
         default:
             return state
@@ -28,7 +48,11 @@ const reducer = (state, action) => {
 const initialState = {
     isConnected: false,
     messages: [],
-    players: {}
+    players: {},
+    player: {},
+    room: {},
+    rooms: {},
+    match: {}
 }
 
 const socket = new io("http://localhost:4000", {
@@ -39,34 +63,47 @@ const GameProvider = (props) => {
     const [state, dispatch] = useReducer(reducer, initialState)
 
     useEffect(() => {
-
-        socket.on("connect", () => {
-            console.log("Conectado!");
-            dispatch({ type: 'CONNECTED', payload: true })
-        });
-        socket.on("disconnect", () => {
-            console.log("Desconectado!");
-            dispatch({ type: 'CONNECTED', payload: false })
-        });
-
-        socket.on('PlayerRefresh', (players) => {
-            dispatch({ type: 'PLAYERS', payload: players })
-        })
-
-        const handleReceiveMessage = (receivedMessage) => {
+        const onConnect = () => {
+            dispatch({ type: 'CONNECTED', payload: true });
+        };
+        const onDisconnect = () => {
+            dispatch({ type: 'CONNECTED', payload: false });
+        };
+        const onPlayerRefresh = (players) => {
+            dispatch({ type: 'PLAYERS', payload: players });
+            dispatch({ type: 'PLAYER', payload: players[socket.id] });
+        };
+        const onReceiveMessage = (receivedMessage) => {
             dispatch({ type: 'ADD_MESSAGES', payload: receivedMessage });
         };
+        const onRoomsRefresh = (rooms) => {
+            dispatch({ type: 'ROOMS', payload: rooms });
+            dispatch({ type: 'ROOM', payload: socket.id });
+        };
+        const onMatchRefresh = (match) => {
+            dispatch({ type: 'MATCH', payload: match });
+        };
 
-        socket.on('ReceiveMessage', handleReceiveMessage);
+        socket.on("connect", onConnect);
+        socket.on("disconnect", onDisconnect);
+        socket.on("PlayerRefresh", onPlayerRefresh);
+        socket.on("ReceiveMessage", onReceiveMessage);
+        socket.on("RoomsRefresh", onRoomsRefresh);
+        socket.on("MatchRefresh", onMatchRefresh);
 
-        socket.open()
+        socket.open();
 
         return () => {
-            socket.off("PlayerRefresh");
-            socket.off("ReceiveMessage", handleReceiveMessage);
+            socket.off("connect", onConnect);
+            socket.off("disconnect", onDisconnect);
+            socket.off("PlayerRefresh", onPlayerRefresh);
+            socket.off("ReceiveMessage", onReceiveMessage);
+            socket.off("RoomsRefresh", onRoomsRefresh);
+            socket.off("MatchRefresh", onMatchRefresh);
             socket.disconnect();
         };
-    }, [])
+    }, []);
+
 
     return (
         <GameContext.Provider value={state}>
@@ -96,4 +133,26 @@ const joinRoom = (roomId) => {
     socket.emit('JoinRoom', roomId)
 }
 
-export { GameContext, GameProvider, sendMessage, createRoom, leaveRoom, joinRoom }
+const gameLoaded = () => {
+    socket.emit('GameLoaded')
+}
+
+let lastType = undefined
+const sendKey = (type,key) => {
+    if(lastType === type)
+        return
+
+    lastType = type;
+    socket.emit('SendKey', {type, key})
+}
+
+export {
+    GameContext,
+    GameProvider,
+    sendMessage,
+    createRoom,
+    leaveRoom,
+    joinRoom,
+    gameLoaded,
+    sendKey
+}
