@@ -4,7 +4,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+  font-family: monospace, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
 }
 
@@ -34,14 +34,20 @@ input {
 .button {
   border-radius: 4px;
   padding: 12px 16px;
-  background-color: black;
+  background-color: white;
   text-transform: uppercase;
-  color: white;
+  color: black;
   border: 0;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 .button:disabled{
   background-color: #555555;
+}
+
+.button:hover{
+  background: #aaa;
 }
 
 .input-wrapper {
@@ -73,4 +79,65 @@ input {
 .card-title{
   display: flex;
   justify-content: space-between;
+}
+
+.room-list-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 1em;
+	background-color: #222;
+	color: white;
+	border-radius: 8px;
+	gap: 1em;
+}
+
+.title {
+	font-size: 1.5em;
+	margin-bottom: 0.5em;
+}
+
+.room-list {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 100%;
+	gap: 0.5em;
+}
+
+.room-card {
+	background-color: #333;
+	padding: 1em;
+	border-radius: 6px;
+	width: 100%;
+	max-width: 300px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.room-name {
+	font-weight: bold;
+	color: white;
+}
+
+.create-button-container {
+	margin-top: 1em;
+}
+
+.room-waiting {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 2em;
+	background-color: #222;
+	color: white;
+	border-radius: 8px;
+	gap: 1em;
+}
+
+.waiting-text {
+	color: rgba(255, 255, 255, 0.7);
+	font-size: 1.1em;
 }

@@ -1,4 +1,4 @@
-import React, { useReducer, useEffect } from "react";
+import React, { useReducer, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 
 const GameContext = React.createContext();
@@ -40,6 +40,11 @@ const reducer = (state, action) => {
                 ...state,
                 match: action.payload
             }
+        case 'MATCH_CLEAR':
+            return {
+                ...state,
+                match: null
+            }
         default:
             return state
     }
@@ -61,6 +66,11 @@ const socket = new io("http://localhost:4000", {
 
 const GameProvider = (props) => {
     const [state, dispatch] = useReducer(reducer, initialState)
+    const pointSound = useRef(null);
+
+    useEffect(() => {
+        pointSound.current = new Audio('/sounds/point.wav');
+    }, []);
 
     useEffect(() => {
         const onConnect = () => {
@@ -84,12 +94,24 @@ const GameProvider = (props) => {
             dispatch({ type: 'MATCH', payload: match });
         };
 
+        const onMatchClear = () => {
+            dispatch({ type: 'MATCH_CLEAR' });
+        };
+
+        const onPointScored = () => {
+            if (pointSound.current) {
+                pointSound.current.play();
+            }
+        };
+
         socket.on("connect", onConnect);
         socket.on("disconnect", onDisconnect);
         socket.on("PlayerRefresh", onPlayerRefresh);
         socket.on("ReceiveMessage", onReceiveMessage);
         socket.on("RoomsRefresh", onRoomsRefresh);
         socket.on("MatchRefresh", onMatchRefresh);
+        socket.on("MatchClear", onMatchClear);
+        socket.on("PointScored", onPointScored);
 
         socket.open();
 
@@ -100,6 +122,8 @@ const GameProvider = (props) => {
             socket.off("ReceiveMessage", onReceiveMessage);
             socket.off("RoomsRefresh", onRoomsRefresh);
             socket.off("MatchRefresh", onMatchRefresh);
+            socket.off("MatchClear", onMatchClear);
+            socket.off("PointScored", onPointScored);
             socket.disconnect();
         };
     }, []);
@@ -114,11 +138,6 @@ const GameProvider = (props) => {
 
 const sendMessage = (message) => {
     socket.emit("SendMessage", message)
-}
-
-const removeEventListener = (event, socket) => {
-    const listeners = socket.listeners(event)
-    Object.keys(listeners).forEach(key => socket.removeEventListener(event, listeners[key]))
 }
 
 const createRoom = () => {
@@ -138,12 +157,12 @@ const gameLoaded = () => {
 }
 
 let lastType = undefined
-const sendKey = (type,key) => {
-    if(lastType === type)
+const sendKey = (type, key) => {
+    if (lastType === type)
         return
 
     lastType = type;
-    socket.emit('SendKey', {type, key})
+    socket.emit('SendKey', { type, key })
 }
 
 export {

@@ -1,11 +1,13 @@
 import React, { useContext, useEffect, useState } from "react";
 import SVG, { Circle, Rect, Line } from "react-svg-draw";
 
+import Modal from "./Modal";
+
 import { GameContext, gameLoaded, leaveRoom, sendKey } from "../contexts/GameContext";
 
 const Game = () => {
-    const { match } = useContext(GameContext);
-    const { gameConfig, ball, message, player1, player2} = match;
+    const { match, player } = useContext(GameContext);
+    const { gameConfig, ball, message, player1, player2 } = match;
 
     const [scale, setScale] = useState(1);
 
@@ -48,6 +50,14 @@ const Game = () => {
 
     }, [gameConfig.width, gameConfig.height]);
 
+    const scoreImages = [
+        "/scores/0.png",
+        "/scores/1.png",
+        "/scores/2.png",
+        "/scores/3.png",
+        "/scores/4.png",
+        "/scores/5.png"
+    ];
 
     return (
         <div
@@ -57,7 +67,7 @@ const Game = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "#111",
+                background: "#000",
                 overflow: "hidden",
             }}
         >
@@ -89,57 +99,79 @@ const Game = () => {
                         style={{ stroke: "rgba(255,255,255,0.2)" }}
                     />
 
-                    <text
-                        x={8}
-                        y='24'
-                        style={{ fontSize: '24px', fill: "rgba(255,255,255,0.6)", fontFamily: 'consolas' }}
-                    >
-                        {match.score1}
-                    </text>
-
-                    <text
-                        x={gameConfig.width - 8}
-                        y='24'
-                        textAnchor="end"  // Alinha o texto à direita
-                        style={{ fontSize: '24px', fill: "rgba(255,255,255,0.6)", fontFamily: 'consolas' }}
-                    >
-                        {match.score2}
-                    </text>
-
                     {ball &&
                         <Circle cx={ball.x} cy={ball.y} r={ball.width} style={{ fill: "#fff" }} />
                     }
 
-                    {player1 && 
-                        <Rect
-                            width={player1.width.toString()}
-                            height={player1.height.toString()}
-                            x={player1.x.toString()}
-                            y={player1.y.toString()}
-                            style={{ fill: "#fff" }}
-                        />
-                    }
+                    {player1 && (
+                        <>
+                            <Rect
+                                width={player1.width.toString()}
+                                height={player1.height.toString()}
+                                x={player1.x.toString()}
+                                y={player1.y.toString()}
+                                style={{ fill: player1?.name === player?.name ? "#d4af37" : "#fff", stroke: player1?.name === player?.name ? "#8f7213" : "#aaa", strokeWidth: '2' }}
+                            />
+                            <text
+                                x={(player1.x).toString()}
+                                y={(player1.y < gameConfig.height / 2 ? player1.y + player1.height + 10 : player1.y - 10).toString()}
+                                style={{ fill: "#ffffff66", fontSize: 8, fontFamily: "monospace", fontWeight: 'bold' }}
+                                textAnchor="left"
+                            >
+                                {player1?.name === player?.name ? "VOCÊ" : player1?.name.replace("Player_", "") ?? "P1"}
+                            </text>
+                        </>
+                    )}
 
-                    {player2 && 
-                        <Rect
-                            width={player2.width.toString()}
-                            height={player2.height.toString()}
-                            x={player2.x.toString()}
-                            y={player2.y.toString()}
-                            style={{ fill: "#fff" }}
-                        />
-                    }
+                    {player2 && (
+                        <>
+                            <Rect
+                                width={player2.width.toString()}
+                                height={player2.height.toString()}
+                                x={player2.x.toString()}
+                                y={player2.y.toString()}
+                                style={{ fill: player2?.name === player?.name ? "#d4af37" : "#fff", stroke: player2?.name === player?.name ? "#8f7213" : "#aaa", strokeWidth: '2' }}
+                            />
+                            <text
+                                x={(player2.x - player2.width).toString()}
+                                y={(player2.y < gameConfig.height / 2 ? player2.y + player2.height + 10 : player2.y - 10).toString()}
+                                style={{ fill: "#ffffff66", fontSize: 8, fontFamily: "monospace", fontWeight: 'bold' }}
+                                textAnchor="right"
+                            >
+                                {player2?.name == player?.name ? "VOCÊ" : player2?.name.replace("Player_", "") ?? "P1"}
+                            </text>
+                        </>
+                    )}
 
+                    <image
+                        href={scoreImages[match.score1] || scoreImages[0]}
+                        x={8}
+                        y={0}  // ajuste vertical para centralizar a imagem no topo
+                        height={30}  // altura da imagem (ajuste conforme quiser)
+                        width={20}   // largura da 
+                        style={{ imageRendering: 'pixelated', zIndex:99999 }}
+                    />
+
+                    <image
+                        href={scoreImages[match.score2] || scoreImages[0]}
+                        x={gameConfig.width - 28}  // 8 + 20 (largura) para alinhar a direita com margem
+                        y={0}
+                        height={30}
+                        width={20}
+                        style={{ imageRendering: 'pixelated', zIndex:99999 }}
+                    />
 
                 </SVG>
-
-                {message && (
-                    <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", color: "#fff" }}>
-                        <h4>{message}</h4>
-                        <button onClick={leaveRoom}>Sair</button>
-                    </div>
-                )}
             </div>
+ {message && (
+  message.includes(player.name) ? (
+    <Modal title={"Fim de jogo"} message={message.replace("O jogador "+player.name,"Você")} leaveRoom={leaveRoom} />
+  ) : (
+    <Modal title={"Fim de jogo"} message={message} leaveRoom={leaveRoom} />
+  )
+)}
+
+        
         </div>
     );
 };
